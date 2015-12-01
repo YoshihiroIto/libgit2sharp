@@ -23,6 +23,16 @@
         public bool FindRenames { get; set; }
 
         /// <summary>
+        /// If set, fail on the first conflict. No merged index will be created.
+        /// </summary>
+        public bool FailOnConflict { get; set; }
+
+        /// <summary>
+        /// Do not write the REUC extension on the generated index
+        /// </summary>
+        public bool SkipReuc { get; set; }
+
+        /// <summary>
         /// Similarity to consider a file renamed.
         /// </summary>
         public int RenameThreshold;

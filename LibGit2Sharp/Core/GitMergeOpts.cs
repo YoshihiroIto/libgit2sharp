@@ -8,7 +8,7 @@ namespace LibGit2Sharp.Core
     {
         public uint Version;
 
-        public GitMergeTreeFlags MergeTreeFlags;
+        public GitMergeFlag MergeTreeFlags;
 
         /// <summary>
         /// Similarity to consider a file renamed.
@@ -35,7 +35,7 @@ namespace LibGit2Sharp.Core
         /// <summary>
         /// File merging flags.
         /// </summary>
-        public GitMergeFileFlags FileFlags;
+        public GitMergeFileFlag FileFlags;
     }
 
     /// <summary>
@@ -98,37 +98,50 @@ namespace LibGit2Sharp.Core
     }
 
     [Flags]
-    internal enum GitMergeTreeFlags
+    internal enum GitMergeFlag
     {
         /// <summary>
         /// No options.
         /// </summary>
-        GIT_MERGE_TREE_NORMAL = 0,
+        GIT_MERGE_NORMAL = 0,
 
         /// <summary>
         /// Detect renames that occur between the common ancestor and the "ours"
      	/// side or the common ancestor and the "theirs" side.  This will enable
  	    /// the ability to merge between a modified and renamed file.
         /// </summary>
-        GIT_MERGE_TREE_FIND_RENAMES = (1 << 0),
+        GIT_MERGE_FIND_RENAMES = (1 << 0),
 
         /// <summary>
         /// If a conflict occurs, exit immediately instead of attempting to
         /// continue resolving conflicts.  The merge operation will fail with
         /// GIT_EMERGECONFLICT and no index will be returned.
         ///</summary>
-        GIT_MERGE_TREE_FAIL_ON_CONFLICT = (1 << 1),
+        GIT_MERGE_FAIL_ON_CONFLICT = (1 << 1),
+
+        /// <summary>
+        /// Do not write the REUC extension on the generated index
+        /// </summary>
+        GIT_MERGE_SKIP_REUC = (1 << 2),
+
+        /// <summary>
+        /// If the commits being merged have multiple merge bases, do not build
+        /// a recursive merge base (by merging the multiple merge bases),
+        /// instead simply use the first base.  This flag provides a similar
+        /// merge base to `git-merge-resolve`.
+        /// </summary>
+        GIT_MERGE_NO_RECURSIVE = (1 << 3),
     }
 
     [Flags]
-    internal enum GitMergeFileFlags
+    internal enum GitMergeFileFlag
     {
         /// <summary>
         /// Defaults
         /// </summary>
         GIT_MERGE_FILE_DEFAULT = 0,
 
-        /// <summary>
+        /// <summ   ary>
         /// Create standard conflicted merge files
         /// </summary>
         GIT_MERGE_FILE_STYLE_MERGE = (1 << 0),
