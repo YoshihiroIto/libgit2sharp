@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using LibGit2Sharp.Core;
 using LibGit2Sharp.Core.Handles;
 
@@ -13,7 +16,7 @@ namespace LibGit2Sharp
     /// The collection of Branches in a <see cref="Repository"/>
     /// </summary>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public class BranchCollection : IEnumerable<Branch>
+    public class BranchCollection : IEnumerable<Branch>, INotifyCollectionChanged, INotifyPropertyChanged
     {
         internal readonly Repository repo;
 
@@ -159,6 +162,16 @@ namespace LibGit2Sharp
             { }
 
             var branch = this[ShortToLocalName(name)];
+
+            var index = IndexOf(branch);
+
+            // INotifyCollectionChanged, INotifyPropertyChanged
+            {
+                OnPropertyChanged("Count");
+                OnPropertyChanged("Item[]");
+                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, branch, index));
+            }
+
             return branch;
         }
 
@@ -199,9 +212,18 @@ namespace LibGit2Sharp
         {
             Ensure.ArgumentNotNull(branch, "branch");
 
+            var index = IndexOf(branch);
+
             using (ReferenceSafeHandle referencePtr = repo.Refs.RetrieveReferencePtr(branch.CanonicalName))
             {
                 Proxy.git_branch_delete(referencePtr);
+            }
+
+            // INotifyCollectionChanged, INotifyPropertyChanged
+            {
+                OnPropertyChanged("Count");
+                OnPropertyChanged("Item[]");
+                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, branch, index));
             }
         }
 
@@ -305,6 +327,50 @@ namespace LibGit2Sharp
         private string DebuggerDisplay
         {
             get { return string.Format(CultureInfo.InvariantCulture, "Count = {0}", this.Count()); }
+        }
+
+        /// <summary>
+        /// </summary>
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
+
+        /// <summary>
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void OnCollectionChanged(NotifyCollectionChangedEventArgs args)
+        {
+            var threadSafeHandler = Interlocked.CompareExchange(ref CollectionChanged, null, null);
+
+            if (threadSafeHandler != null)
+            {
+                threadSafeHandler(this, args);
+            }
+        }
+
+        private void OnPropertyChanged(string propertyName)
+        {
+            var threadSafeHandler = Interlocked.CompareExchange(ref PropertyChanged, null, null);
+
+            if (threadSafeHandler != null)
+            {
+                threadSafeHandler(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+
+        private int IndexOf(Branch branch)
+        {
+            if (branch == null) throw new ArgumentNullException(nameof(branch));
+
+            var index = 0;
+            foreach (var b in repo.Branches)
+            {
+                if (b == branch)
+                    return index;
+
+                ++ index;
+            }
+
+            return -1;
         }
     }
 }
